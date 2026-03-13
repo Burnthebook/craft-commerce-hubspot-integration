@@ -10,7 +10,7 @@ Integrates Craft Commerce with Hubspot.
 ## Requirements
 
 - Craft CMS 5.0.0+
-- PHP 8.2+
+- PHP 8.3+
 
 ## Installation
 
