@@ -1,0 +1,139 @@
+{# @var plugin \burnthebook\craftcommercehubspotintegration\CommerceHubspotIntegration #}
+{# @var settings \burnthebook\craftcommercehubspotintegration\models\Settings #}
+
+{% import '_includes/forms.twig' as forms %}
+{{ 
+    forms.textField({
+        first: true,
+        label: 'Hubspot API Base URL (with http(s)://)',
+        instructions: "Required - the base URL to the Hubspot API",
+        id: 'hubspotApiBaseUrl',
+        name: 'hubspotApiBaseUrl',
+        required: true,
+        value: settings.hubspotApiBaseUrl
+    }) 
+}}
+{{ 
+    forms.autosuggestField({
+        label: 'HubSpot Private App Token',
+        instructions: 'Required - Your HubSpot private app token (Bearer token value only).',
+        id: 'hubspotPrivateAppToken',
+        name: 'hubspotPrivateAppToken',
+        required: true,
+        suggestEnvVars: true,
+        value: settings.hubspotPrivateAppToken
+    }) 
+}}
+
+<div class="field">
+    <div class="heading">
+        <label>{{ 'Connection Test'|t('craft-commerce-hubspot-integration') }}</label>
+    </div>
+    <div class="instructions">
+        <p>Checks if the saved base URL and token can reach HubSpot.</p>
+    </div>
+    <div class="input ltr">
+        <a class="btn" href="{{ actionUrl('craft-commerce-hubspot-integration/hubspot/test-connection') }}">Test HubSpot Connection</a>
+    </div>
+</div>
+{{ 
+    forms.textField({
+        first: true,
+        label: 'Course Pipeline ID',
+        instructions: 'HubSpot pipeline ID used when creating Course custom objects.',
+        id: 'hubspotCoursePipelineId',
+        name: 'hubspotCoursePipelineId',
+        required: true,
+        value: settings.hubspotCoursePipelineId
+    }) 
+}}
+{{ 
+    forms.textField({
+        label: 'Course Stage (Open) ID',
+        instructions: 'HubSpot Open stage ID for Course custom objects.',
+        id: 'hubspotCourseStageOpenId',
+        name: 'hubspotCourseStageOpenId',
+        required: true,
+        value: settings.hubspotCourseStageOpenId
+    }) 
+}}
+{{ 
+    forms.textField({
+        label: 'Course Stage (Closed) ID',
+        instructions: 'HubSpot Closed stage ID for Course custom objects.',
+        id: 'hubspotCourseStageClosedId',
+        name: 'hubspotCourseStageClosedId',
+        required: true,
+        value: settings.hubspotCourseStageClosedId
+    }) 
+}}
+{{ 
+    forms.textField({
+        label: 'Order Pipeline ID',
+        instructions: 'HubSpot pipeline ID used when creating Order objects.',
+        id: 'hubspotOrderPipelineId',
+        name: 'hubspotOrderPipelineId',
+        required: true,
+        value: settings.hubspotOrderPipelineId
+    }) 
+}}
+{{ 
+    forms.textField({
+        label: 'Order Stage (Open) ID',
+        instructions: 'HubSpot Open stage ID for Order objects.',
+        id: 'hubspotOrderStageOpenId',
+        name: 'hubspotOrderStageOpenId',
+        required: true,
+        value: settings.hubspotOrderStageOpenId
+    }) 
+}}
+{{ 
+    forms.textField({
+        label: 'Order Stage (Processed) ID',
+        instructions: 'HubSpot Processed stage ID for Order objects.',
+        id: 'hubspotOrderStageProcessedId',
+        name: 'hubspotOrderStageProcessedId',
+        required: true,
+        value: settings.hubspotOrderStageProcessedId
+    }) 
+}}
+{{ 
+    forms.textField({
+        label: 'Order Stage (Shipped) ID',
+        instructions: 'HubSpot Shipped stage ID for Order objects.',
+        id: 'hubspotOrderStageShippedId',
+        name: 'hubspotOrderStageShippedId',
+        required: true,
+        value: settings.hubspotOrderStageShippedId
+    }) 
+}}
+{{ 
+    forms.textField({
+        label: 'Order Stage (Delivered) ID',
+        instructions: 'HubSpot Delivered stage ID for Order objects.',
+        id: 'hubspotOrderStageDeliveredId',
+        name: 'hubspotOrderStageDeliveredId',
+        required: true,
+        value: settings.hubspotOrderStageDeliveredId
+    }) 
+}}
+{{ 
+    forms.textField({
+        label: 'Order Stage (Cancelled) ID',
+        instructions: 'HubSpot Cancelled stage ID for Order objects.',
+        id: 'hubspotOrderStageCancelledId',
+        name: 'hubspotOrderStageCancelledId',
+        required: true,
+        value: settings.hubspotOrderStageCancelledId
+    }) 
+}}
+{{ 
+    forms.textField({
+        label: 'Order Source Store',
+        instructions: 'Value to send to hs_source_store for HubSpot orders.',
+        id: 'hubspotOrderSourceStore',
+        name: 'hubspotOrderSourceStore',
+        required: true,
+        value: settings.hubspotOrderSourceStore
+    }) 
+}}

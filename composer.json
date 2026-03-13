@@ -1,0 +1,57 @@
+{
+    "name": "burnthebook/craft-commerce-hubspot-integration",
+    "description": "Integrates Craft Commerce with Hubspot",
+    "type": "craft-plugin",
+    "license": "mit",
+    "authors": [
+        {
+          "name": "Michael Burton",
+          "homepage": "https://github.com/Burnthebook",
+          "role": "Developer"
+        }
+    ],
+    "support": {
+        "email": "support@burnthebook.co.uk",
+        "issues": "https://github.com/burnthebook/craft-commerce-hubspot-integration/issues?state=open",
+        "source": "https://github.com/burnthebook/craft-commerce-hubspot-integration",
+        "docs": "https://github.com/burnthebook/craft-commerce-hubspot-integration",
+        "rss": "https://github.com/burnthebook/craft-commerce-hubspot-integration/releases.atom"
+    },
+    "require": {
+        "php": ">=8.2",
+        "craftcms/cms": "^5.0.0",
+        "guzzlehttp/guzzle": "^7.8"
+    },
+    "require-dev": {
+        "craftcms/ecs": "dev-main",
+        "craftcms/phpstan": "dev-main",
+        "symfony/var-dumper": "^6.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "burnthebook\\craftcommercehubspotintegration\\": "src/"
+        }
+    },
+    "extra": {
+        "handle": "craft-commerce-hubspot-integration",
+        "name": "Craft Commerce Hubspot Integration",
+        "developer": "Burnthebook",
+        "documentationUrl": "https://github.com/burnthebook/craft-commerce-hubspot-integration",
+        "class": "burnthebook\\craftcommercehubspotintegration\\CommerceHubspotIntegration"
+    },
+    "scripts": {
+        "check-cs": "ecs check --ansi",
+        "fix-cs": "ecs check --ansi --fix",
+        "phpstan": "phpstan --memory-limit=1G"
+    },
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "8.2"
+        },
+        "allow-plugins": {
+            "yiisoft/yii2-composer": true,
+            "craftcms/plugin-installer": true
+        }
+    }
+}
