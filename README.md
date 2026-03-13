@@ -2,6 +2,11 @@
 
 Integrates Craft Commerce with Hubspot.
 
+> [!WARNING]  
+> This plugin is built for burnthebook internal use currently. Not a lot is generally configurable, and it is specific to our clients workflows.
+> Eventually we would like to make this generic enough that anyone could use it, hence it's existence as a public repository.
+> You can also use the code as a reference to create your own.
+
 ## Requirements
 
 - Craft CMS 5.0.0+
