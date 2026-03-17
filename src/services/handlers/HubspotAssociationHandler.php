@@ -45,25 +45,39 @@ final class HubspotAssociationHandler
         array $delegates,
         array $courseMap
     ): void {
-        $this->client->associateObjectsByType(
+        $this->client->associateObjects(
             fromObjectType: HubspotObjectType::Contacts,
             fromObjectId: $bookerContactId,
             toObjectType: 'orders',
             toObjectId: $orderHubspotId,
-            associationTypeId: HubspotAssociationType::ContactToOrderBooker->id(),
-            associationCategory: HubspotAssociationCategory::UserDefined
+            associationTypes: [
+                [
+                    'associationCategory' => HubspotAssociationCategory::UserDefined->value,
+                    'associationTypeId' => HubspotAssociationType::ContactToOrderBooker->id(),
+                ],
+                [
+                    'associationCategory' => HubspotAssociationCategory::UserDefined->value,
+                    'associationTypeId' => HubspotAssociationType::ContactToOrderDelegate->id(),
+                ],
+            ]
         );
 
-        $this->client->associateObjectsByType(
-            fromObjectType: HubspotObjectType::Contacts,
-            fromObjectId: $bookerContactId,
-            toObjectType: 'orders',
-            toObjectId: $orderHubspotId,
-            associationTypeId: HubspotAssociationType::ContactToOrderDelegate->id(),
-            associationCategory: HubspotAssociationCategory::UserDefined
+        Craft::info(
+            sprintf(
+                'Associated booker contact %s to order %s with labels %d,%d.',
+                $bookerContactId,
+                $orderHubspotId,
+                HubspotAssociationType::ContactToOrderBooker->id(),
+                HubspotAssociationType::ContactToOrderDelegate->id()
+            ),
+            'craft-commerce-hubspot-integration'
         );
 
         foreach ($delegates as $delegate) {
+            if ($delegate['contactId'] === $bookerContactId) {
+                continue;
+            }
+
             $this->client->associateObjectsByType(
                 fromObjectType: HubspotObjectType::Contacts,
                 fromObjectId: $delegate['contactId'],
@@ -75,22 +89,32 @@ final class HubspotAssociationHandler
         }
 
         foreach ($courseMap as $courseId) {
-            $this->client->associateObjectsByType(
+            $this->client->associateObjects(
                 fromObjectType: HubspotObjectType::Contacts,
                 fromObjectId: $bookerContactId,
                 toObjectType: HubspotObjectType::Course,
                 toObjectId: $courseId,
-                associationTypeId: HubspotAssociationType::ContactToCourseBooker->id(),
-                associationCategory: HubspotAssociationCategory::UserDefined
+                associationTypes: [
+                    [
+                        'associationCategory' => HubspotAssociationCategory::UserDefined->value,
+                        'associationTypeId' => HubspotAssociationType::ContactToCourseBooker->id(),
+                    ],
+                    [
+                        'associationCategory' => HubspotAssociationCategory::UserDefined->value,
+                        'associationTypeId' => HubspotAssociationType::ContactToCourseDelegate->id(),
+                    ],
+                ]
             );
 
-            $this->client->associateObjectsByType(
-                fromObjectType: HubspotObjectType::Contacts,
-                fromObjectId: $bookerContactId,
-                toObjectType: HubspotObjectType::Course,
-                toObjectId: $courseId,
-                associationTypeId: HubspotAssociationType::ContactToCourseDelegate->id(),
-                associationCategory: HubspotAssociationCategory::UserDefined
+            Craft::info(
+                sprintf(
+                    'Associated booker contact %s to course %s with labels %d,%d.',
+                    $bookerContactId,
+                    $courseId,
+                    HubspotAssociationType::ContactToCourseBooker->id(),
+                    HubspotAssociationType::ContactToCourseDelegate->id()
+                ),
+                'craft-commerce-hubspot-integration'
             );
         }
 
@@ -108,6 +132,10 @@ final class HubspotAssociationHandler
         $lineItemSkuMap = $this->buildLineItemSkuMap($order);
 
         foreach ($delegates as $delegate) {
+            if ($delegate['contactId'] === $bookerContactId) {
+                continue;
+            }
+
             $lineItemId = $delegate['lineItemId'];
             if ($lineItemId === null) {
                 continue;
