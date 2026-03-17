@@ -54,6 +54,15 @@ final class HubspotAssociationHandler
             associationCategory: HubspotAssociationCategory::UserDefined
         );
 
+        $this->client->associateObjectsByType(
+            fromObjectType: HubspotObjectType::Contacts,
+            fromObjectId: $bookerContactId,
+            toObjectType: 'orders',
+            toObjectId: $orderHubspotId,
+            associationTypeId: HubspotAssociationType::ContactToOrderDelegate->id(),
+            associationCategory: HubspotAssociationCategory::UserDefined
+        );
+
         foreach ($delegates as $delegate) {
             $this->client->associateObjectsByType(
                 fromObjectType: HubspotObjectType::Contacts,
@@ -72,6 +81,15 @@ final class HubspotAssociationHandler
                 toObjectType: HubspotObjectType::Course,
                 toObjectId: $courseId,
                 associationTypeId: HubspotAssociationType::ContactToCourseBooker->id(),
+                associationCategory: HubspotAssociationCategory::UserDefined
+            );
+
+            $this->client->associateObjectsByType(
+                fromObjectType: HubspotObjectType::Contacts,
+                fromObjectId: $bookerContactId,
+                toObjectType: HubspotObjectType::Course,
+                toObjectId: $courseId,
+                associationTypeId: HubspotAssociationType::ContactToCourseDelegate->id(),
                 associationCategory: HubspotAssociationCategory::UserDefined
             );
         }
