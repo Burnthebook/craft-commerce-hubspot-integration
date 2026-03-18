@@ -43,6 +43,8 @@ final class HubspotOrderRecordSyncJob extends AbstractHubspotSyncStageJob
                 ->getHubspotApiService()
                 ->syncOrderRecord($order);
 
+            $this->logOrderHistory($order, 'HubSpot sync: order record stage completed.');
+
             Craft::$app->getQueue()->push(new HubspotAssociationsSyncJob([
                 'orderId' => $this->orderId,
                 'payloadHash' => $this->payloadHash,

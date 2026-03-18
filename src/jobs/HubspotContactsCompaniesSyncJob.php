@@ -37,6 +37,8 @@ final class HubspotContactsCompaniesSyncJob extends AbstractHubspotSyncStageJob
                 ->getHubspotApiService()
                 ->syncOrderContactsAndCompanies($order);
 
+            $this->logOrderHistory($order, 'HubSpot sync: contacts/companies stage completed.');
+
             Craft::$app->getQueue()->push(new HubspotCoursesSyncJob([
                 'orderId' => $this->orderId,
                 'payloadHash' => $this->payloadHash,

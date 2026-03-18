@@ -9,6 +9,8 @@ use Throwable;
 use craft\queue\BaseJob;
 use craft\commerce\elements\Order;
 use yii\queue\RetryableJobInterface;
+use craft\commerce\Plugin as CommercePlugin;
+use craft\commerce\models\OrderHistory;
 use burnthebook\craftcommercehubspotintegration\records\HubspotSyncRecord;
 use burnthebook\craftcommercehubspotintegration\exceptions\HubspotApiException;
 
@@ -96,5 +98,39 @@ abstract class AbstractHubspotSyncStageJob extends BaseJob implements RetryableJ
             sprintf('HubSpot sync stage failed for order %d: %s', $this->orderId, $exception->getMessage()),
             'craft-commerce-hubspot-integration'
         );
+    }
+
+    /**
+     * Append a message to the order history log.
+     *
+     * @param Order $order
+     * @param string $message
+     *
+     * @return void
+     */
+    protected function logOrderHistory(Order $order, string $message): void
+    {
+        $history = new OrderHistory();
+        $history->orderId = (int)$order->id;
+        $history->message = $message;
+
+        $customerId = $order->getCustomerId();
+        $history->userId = $customerId ?: null;
+
+        if ($history->userId !== null) {
+            $user = Craft::$app->getUsers()->getUserById($history->userId);
+            $history->userName = $user?->fullName ?? $user?->email;
+        } else {
+            $history->userName = 'System';
+        }
+
+        try {
+            CommercePlugin::getInstance()->getOrderHistories()->saveOrderHistory($history, false);
+        } catch (Throwable $exception) {
+            Craft::warning(
+                sprintf('Unable to write HubSpot sync history for order %d: %s', $this->orderId, $exception->getMessage()),
+                'craft-commerce-hubspot-integration'
+            );
+        }
     }
 }

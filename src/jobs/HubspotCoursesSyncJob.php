@@ -38,6 +38,8 @@ final class HubspotCoursesSyncJob extends AbstractHubspotSyncStageJob
                 ->getHubspotApiService()
                 ->syncOrderCourses($order);
 
+            $this->logOrderHistory($order, 'HubSpot sync: courses stage completed.');
+
             Craft::$app->getQueue()->push(new HubspotOrderRecordSyncJob([
                 'orderId' => $this->orderId,
                 'payloadHash' => $this->payloadHash,

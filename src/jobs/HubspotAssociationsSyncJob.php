@@ -57,6 +57,8 @@ final class HubspotAssociationsSyncJob extends AbstractHubspotSyncStageJob
                     courseMap: $this->courseMap
                 );
 
+            $this->logOrderHistory($order, 'HubSpot sync: associations stage completed.');
+
             $record = HubspotSyncRecord::findOne(['orderId' => $this->orderId]);
             if ($record instanceof HubspotSyncRecord) {
                 $record->status = HubspotSyncRecord::STATUS_SUCCEEDED;
