@@ -45,30 +45,39 @@ final class HubspotAssociationHandler
         array $delegates,
         array $courseMap
     ): void {
+        $delegateEmailMap = $this->buildDelegateEmailMap($order);
+        $bookerEmail = $this->getBookerEmail($order);
+        $bookerIsDelegate = $bookerEmail !== null && isset($delegateEmailMap[$bookerEmail]);
+
+        $bookerOrderAssociations = [[
+            'associationCategory' => HubspotAssociationCategory::UserDefined->value,
+            'associationTypeId' => HubspotAssociationType::ContactToOrderBooker->id(),
+        ]];
+
+        if ($bookerIsDelegate) {
+            $bookerOrderAssociations[] = [
+                'associationCategory' => HubspotAssociationCategory::UserDefined->value,
+                'associationTypeId' => HubspotAssociationType::ContactToOrderDelegate->id(),
+            ];
+        }
+
         $this->client->associateObjects(
             fromObjectType: HubspotObjectType::Contacts,
             fromObjectId: $bookerContactId,
             toObjectType: 'orders',
             toObjectId: $orderHubspotId,
-            associationTypes: [
-                [
-                    'associationCategory' => HubspotAssociationCategory::UserDefined->value,
-                    'associationTypeId' => HubspotAssociationType::ContactToOrderBooker->id(),
-                ],
-                [
-                    'associationCategory' => HubspotAssociationCategory::UserDefined->value,
-                    'associationTypeId' => HubspotAssociationType::ContactToOrderDelegate->id(),
-                ],
-            ]
+            associationTypes: $bookerOrderAssociations
         );
 
         Craft::info(
             sprintf(
-                'Associated booker contact %s to order %s with labels %d,%d.',
+                'Associated booker contact %s to order %s with labels %s.',
                 $bookerContactId,
                 $orderHubspotId,
-                HubspotAssociationType::ContactToOrderBooker->id(),
-                HubspotAssociationType::ContactToOrderDelegate->id()
+                implode(',', array_map(
+                    static fn(array $label): string => (string)$label['associationTypeId'],
+                    $bookerOrderAssociations
+                ))
             ),
             'craft-commerce-hubspot-integration'
         );
@@ -89,30 +98,35 @@ final class HubspotAssociationHandler
         }
 
         foreach ($courseMap as $courseId) {
+            $bookerCourseAssociations = [[
+                'associationCategory' => HubspotAssociationCategory::UserDefined->value,
+                'associationTypeId' => HubspotAssociationType::ContactToCourseBooker->id(),
+            ]];
+
+            if ($bookerIsDelegate) {
+                $bookerCourseAssociations[] = [
+                    'associationCategory' => HubspotAssociationCategory::UserDefined->value,
+                    'associationTypeId' => HubspotAssociationType::ContactToCourseDelegate->id(),
+                ];
+            }
+
             $this->client->associateObjects(
                 fromObjectType: HubspotObjectType::Contacts,
                 fromObjectId: $bookerContactId,
                 toObjectType: HubspotObjectType::Course,
                 toObjectId: $courseId,
-                associationTypes: [
-                    [
-                        'associationCategory' => HubspotAssociationCategory::UserDefined->value,
-                        'associationTypeId' => HubspotAssociationType::ContactToCourseBooker->id(),
-                    ],
-                    [
-                        'associationCategory' => HubspotAssociationCategory::UserDefined->value,
-                        'associationTypeId' => HubspotAssociationType::ContactToCourseDelegate->id(),
-                    ],
-                ]
+                associationTypes: $bookerCourseAssociations
             );
 
             Craft::info(
                 sprintf(
-                    'Associated booker contact %s to course %s with labels %d,%d.',
+                    'Associated booker contact %s to course %s with labels %s.',
                     $bookerContactId,
                     $courseId,
-                    HubspotAssociationType::ContactToCourseBooker->id(),
-                    HubspotAssociationType::ContactToCourseDelegate->id()
+                    implode(',', array_map(
+                        static fn(array $label): string => (string)$label['associationTypeId'],
+                        $bookerCourseAssociations
+                    ))
                 ),
                 'craft-commerce-hubspot-integration'
             );
@@ -238,5 +252,65 @@ final class HubspotAssociationHandler
 
         $normalized = trim((string)$value);
         return $normalized !== '' ? $normalized : null;
+    }
+
+    /**
+     * Build a map of delegate emails for quick lookups.
+     *
+     * @param Order $order
+     *
+     * @return array<string, true>
+     */
+    private function buildDelegateEmailMap(Order $order): array
+    {
+        /** @var array<string, mixed> $orderData */
+        $orderData = $order->toArray();
+        $itemDelegates = ArrayHelper::getValue($orderData, 'delegates.itemDelegates', []);
+
+        if (!is_array($itemDelegates)) {
+            return [];
+        }
+
+        $emailMap = [];
+
+        foreach ($itemDelegates as $itemDelegate) {
+            if (!is_array($itemDelegate)) {
+                continue;
+            }
+
+            $delegates = ArrayHelper::getValue($itemDelegate, 'delegates', []);
+            if (!is_array($delegates)) {
+                continue;
+            }
+
+            foreach ($delegates as $delegate) {
+                if (!is_array($delegate)) {
+                    continue;
+                }
+
+                $email = $this->normalizeValue(ArrayHelper::getValue($delegate, 'email'));
+                if ($email !== null) {
+                    $emailMap[strtolower($email)] = true;
+                }
+            }
+        }
+
+        return $emailMap;
+    }
+
+    /**
+     * Resolve the booker email from the order payload.
+     *
+     * @param Order $order
+     *
+     * @return string|null
+     */
+    private function getBookerEmail(Order $order): ?string
+    {
+        /** @var array<string, mixed> $orderData */
+        $orderData = $order->toArray();
+
+        $email = $this->normalizeValue(ArrayHelper::getValue($orderData, 'customer.email'));
+        return $email !== null ? strtolower($email) : null;
     }
 }
