@@ -62,7 +62,7 @@ final class HubspotCourseHandler
             }
 
             $description = $this->normalizeValue(ArrayHelper::getValue($lineItem, 'description'));
-            $conferenceStartDate = $this->normalizeDateValue(ArrayHelper::getValue($lineItem, 'ConferenceStartDate'));
+            $conferenceStartDate = $this->normalizeDateMillis(ArrayHelper::getValue($lineItem, 'ConferenceStartDate'));
             $typeId = $this->normalizeValue(ArrayHelper::getValue($lineItem, 'type_id'));
             $courseMap[$sku] = $this->upsertCourseBySku(
                 sku: $sku,
@@ -137,6 +137,8 @@ final class HubspotCourseHandler
             'hs_pipeline' => $this->coursePipelineId,
             'hs_pipeline_stage' => $this->resolveCourseStageId($status),
         ];
+
+        $properties = $this->filterNullProperties($properties);
 
         $created = $this->client->createObject(HubspotObjectType::Course, $properties);
         return (string)($created['id'] ?? '');
@@ -238,13 +240,13 @@ final class HubspotCourseHandler
     }
 
     /**
-     * Normalize mixed datetime input to ISO 8601.
+     * Normalize mixed datetime input to milliseconds since epoch.
      *
      * @param mixed $value
      *
-     * @return string|null
+     * @return int|null
      */
-    private function normalizeDateValue(mixed $value): ?string
+    private function normalizeDateMillis(mixed $value): ?int
     {
         if (!is_scalar($value)) {
             return null;
@@ -256,9 +258,32 @@ final class HubspotCourseHandler
         }
 
         try {
-            return (new \DateTimeImmutable($raw))->format(DATE_ATOM);
+            $date = new \DateTimeImmutable($raw);
+            return $date->getTimestamp() * 1000;
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    /**
+     * Remove null values before sending to HubSpot.
+     *
+     * @param array<string, scalar|null> $properties
+     *
+     * @return array<string, scalar>
+     */
+    private function filterNullProperties(array $properties): array
+    {
+        $filtered = [];
+
+        foreach ($properties as $key => $value) {
+            if ($value === null) {
+                continue;
+            }
+
+            $filtered[$key] = $value;
+        }
+
+        return $filtered;
     }
 }

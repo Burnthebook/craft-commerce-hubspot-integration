@@ -94,10 +94,16 @@ abstract class AbstractHubspotSyncStageJob extends BaseJob implements RetryableJ
 
         $record->save(false);
 
-        Craft::error(
-            sprintf('HubSpot sync stage failed for order %d: %s', $this->orderId, $exception->getMessage()),
-            'craft-commerce-hubspot-integration'
-        );
+        $errorMessage = sprintf('HubSpot sync stage failed for order %d: %s', $this->orderId, $exception->getMessage());
+
+        if ($exception instanceof HubspotApiException) {
+            $responseBody = trim($exception->getResponseBody());
+            if ($responseBody !== '') {
+                $errorMessage .= ' Response: ' . $responseBody;
+            }
+        }
+
+        Craft::error($errorMessage, 'craft-commerce-hubspot-integration');
     }
 
     /**
