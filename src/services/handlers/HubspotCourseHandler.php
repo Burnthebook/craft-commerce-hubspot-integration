@@ -107,10 +107,20 @@ final class HubspotCourseHandler
             ['craft_course_id', 'hs_course_name', 'hs_course_id', 'course_date', 'type_id']
         );
 
+        if ($existing === null) {
+            $existing = $this->findObjectByProperty(
+                HubspotObjectType::Course,
+                'hs_course_id',
+                $sku,
+                ['craft_course_id', 'hs_course_name', 'hs_course_id', 'course_date', 'type_id']
+            );
+        }
+
         if ($existing !== null) {
             $propertiesToUpdate = $this->buildBlankFillUpdatePayload(
                 existingProperties: is_array($existing['properties'] ?? null) ? $existing['properties'] : [],
                 incomingProperties: [
+                    'craft_course_id' => $sku,
                     'course_date' => $conferenceStartDate,
                     'type_id' => $typeId,
                 ]
