@@ -81,3 +81,71 @@ When an order completes, sync is queued and executed in staged jobs. The flow be
 - Service components are built in `CommerceHubspotIntegration::config()`.
 - Env vars are resolved via `craft\helpers\App::parseEnv(...)` before building `HubspotApiClient`.
 - API client sends Bearer auth (`Authorization: Bearer <token>`) and applies retry/backoff for `429` and `5xx` responses.
+
+## Course Provisioning (On Save + Batch Import)
+
+This plugin supports standalone HubSpot course provisioning outside the order lifecycle.
+
+### What it does
+
+- On-save provisioning: when a selected source element is saved, a `HubspotCourseProvisioningJob` is queued.
+- Batch import provisioning: a CLI command imports selected source elements in bulk.
+- Shared pipeline: both paths use the same provisioning service and upsert logic.
+
+### Configure provisioning sources
+
+In plugin settings (`Admin -> Settings -> Craft Commerce Hubspot Integration`):
+
+- Enable `Enable CMS Course Provisioning`.
+- Under `Provisioning Sources`, tick the sources that should provision courses:
+  - Commerce Product Types
+  - Digital Product Types
+  - Entry Sections
+
+If a source is not selected, saves from that source are skipped.
+
+### On-save behavior
+
+- Trigger: save a selected Commerce Product, Digital Product, or Entry.
+- Queue job: `Provision HubSpot course for element #<id> (site <id>)`.
+- Idempotency: unchanged payloads are skipped by payload hash.
+- Result tracking: status/errors are stored in `{{%btb_hubspot_course_sync_records}}`.
+
+### Batch import (CLI)
+
+Import all elements from selected provisioning sources:
+
+```bash
+php craft courses/import
+```
+
+Queue in smaller chunks:
+
+```bash
+php craft courses/import --batch-size=100
+```
+
+Process immediately (synchronous, no queue):
+
+```bash
+php craft courses/import --sync=1
+```
+
+Import one element only:
+
+```bash
+php craft courses/import --entry-id=123
+php craft courses/import --entry-id=123 --sync=1
+```
+
+Run queued jobs manually:
+
+```bash
+php craft queue/listen --verbose
+```
+
+### Notes
+
+- Provisioning requires a stable SKU for dedupe/upsert.
+- Missing optional fields (for example date/type fields not present on a source) are skipped.
+- HubSpot validation errors are recorded in the sync record and Craft logs.

@@ -1,5 +1,6 @@
 {# @var plugin \burnthebook\craftcommercehubspotintegration\CommerceHubspotIntegration #}
 {# @var settings \burnthebook\craftcommercehubspotintegration\models\Settings #}
+{# @var provisioningSourceOptions array #}
 
 {% import '_includes/forms.twig' as forms %}
 {{ 
@@ -136,4 +137,23 @@
         required: true,
         value: settings.hubspotOrderSourceStore
     }) 
+}}
+{{
+    forms.lightswitchField({
+        label: 'Enable CMS Course Provisioning',
+        instructions: 'When enabled, saving an entry in the configured section enqueues a standalone HubSpot course provisioning job.',
+        id: 'hubspotCourseProvisioningEnabled',
+        name: 'hubspotCourseProvisioningEnabled',
+        on: settings.hubspotCourseProvisioningEnabled
+    })
+}}
+{{
+    forms.checkboxSelectField({
+        label: 'Provisioning Sources',
+        instructions: 'Select which sources should trigger course provisioning on save. Leave empty to allow all.',
+        id: 'hubspotCourseProvisioningSourceHandles',
+        name: 'hubspotCourseProvisioningSourceHandles',
+        options: provisioningSourceOptions,
+        values: settings.hubspotCourseProvisioningSourceHandles
+    })
 }}

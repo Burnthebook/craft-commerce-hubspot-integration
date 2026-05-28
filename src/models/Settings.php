@@ -73,6 +73,20 @@ final class Settings extends Model
     public string $hubspotOrderSourceStore = 'CraftCMS';
 
     /**
+     * Whether CMS-driven course provisioning is enabled.
+     */
+    public bool $hubspotCourseProvisioningEnabled = true;
+
+    /**
+     * Selected source handles used for CMS-driven course provisioning.
+     *
+     * Values are namespaced strings, for example:
+     * - commerceProductType:course
+     * - section:events
+     */
+    public array $hubspotCourseProvisioningSourceHandles = [];
+
+    /**
      * Define validation rules for all required settings.
      *
      * @return array<int, array{0: array<int, string>, 1: string}>
@@ -204,5 +218,32 @@ final class Settings extends Model
     public function getParsedHubspotOrderSourceStore(): string
     {
         return trim((string)App::parseEnv($this->hubspotOrderSourceStore));
+    }
+
+    /**
+     * Returns parsed provisioning enabled flag.
+     */
+    public function getParsedHubspotCourseProvisioningEnabled(): bool
+    {
+        return (bool)App::parseBooleanEnv($this->hubspotCourseProvisioningEnabled);
+    }
+
+    /**
+     * Returns parsed provisioning source handles.
+     *
+     * @return array<int, string>
+     */
+    public function getParsedHubspotCourseProvisioningSourceHandles(): array
+    {
+        $handles = [];
+
+        foreach ($this->hubspotCourseProvisioningSourceHandles as $handle) {
+            $parsed = trim((string)App::parseEnv((string)$handle));
+            if ($parsed !== '') {
+                $handles[] = $parsed;
+            }
+        }
+
+        return array_values(array_unique($handles));
     }
 }
