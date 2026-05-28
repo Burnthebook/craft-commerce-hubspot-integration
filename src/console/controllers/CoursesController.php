@@ -97,27 +97,31 @@ final class CoursesController extends Controller
         $queued = 0;
         $failed = 0;
 
-        foreach ($entryQuery->batch($batchSize) as $batch) {
-            foreach ($batch as $entry) {
-                if (!$entry instanceof ElementInterface || !$entry->id || !$entry->siteId) {
-                    $failed++;
-                    continue;
-                }
+        if ($entryCount > 0) {
+            foreach ($entryQuery->batch($batchSize) as $batch) {
+                foreach ($batch as $entry) {
+                    if (!$entry instanceof ElementInterface || !$entry->id || !$entry->siteId) {
+                        $failed++;
+                        continue;
+                    }
 
-                $this->processElement($entry, $sync, $queued, $failed);
-                $processed++;
+                    $this->processElement($entry, $sync, $queued, $failed);
+                    $processed++;
+                }
             }
         }
 
-        foreach ($productQuery->batch($batchSize) as $batch) {
-            foreach ($batch as $product) {
-                if (!$product instanceof ElementInterface || !$product->id || !$product->siteId) {
-                    $failed++;
-                    continue;
-                }
+        if ($productCount > 0) {
+            foreach ($productQuery->batch($batchSize) as $batch) {
+                foreach ($batch as $product) {
+                    if (!$product instanceof ElementInterface || !$product->id || !$product->siteId) {
+                        $failed++;
+                        continue;
+                    }
 
-                $this->processElement($product, $sync, $queued, $failed);
-                $processed++;
+                    $this->processElement($product, $sync, $queued, $failed);
+                    $processed++;
+                }
             }
         }
 
