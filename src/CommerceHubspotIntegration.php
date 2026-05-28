@@ -267,13 +267,23 @@ class CommerceHubspotIntegration extends Plugin
                     return;
                 }
 
+                $entrySectionHandle = '';
+                if (method_exists($entry, 'getSection')) {
+                    $entrySection = $entry->getSection();
+                    $entrySectionHandle = (string)($entrySection?->handle ?? '');
+                }
+
+                if ($entrySectionHandle === '') {
+                    return;
+                }
+
                 $allowedSources = $settings->getParsedHubspotCourseProvisioningSourceHandles();
-                if (!$this->isProvisioningSourceAllowed($allowedSources, 'section:' . (string)$entry->sectionHandle)) {
+                if (!$this->isProvisioningSourceAllowed($allowedSources, 'section:' . $entrySectionHandle)) {
                     Craft::info(
                         sprintf(
                             'Skipping HubSpot course provisioning for entry %d: section "%s" is not in configured provisioning sources.',
                             (int)$entry->id,
-                            (string)$entry->sectionHandle
+                            $entrySectionHandle
                         ),
                         'craft-commerce-hubspot-integration'
                     );
