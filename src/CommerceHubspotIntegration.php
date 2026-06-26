@@ -277,6 +277,10 @@ class CommerceHubspotIntegration extends Plugin
                     return;
                 }
 
+                if (!$this->isElementEnabledForProvisioning($entry)) {
+                    return;
+                }
+
                 $allowedSources = $settings->getParsedHubspotCourseProvisioningSourceHandles();
                 if (!$this->isProvisioningSourceAllowed($allowedSources, 'section:' . $entrySectionHandle)) {
                     Craft::info(
@@ -349,6 +353,10 @@ class CommerceHubspotIntegration extends Plugin
                     return;
                 }
 
+                if (!$this->isElementEnabledForProvisioning($product)) {
+                    return;
+                }
+
                 Craft::$app->getQueue()->push(new HubspotCourseProvisioningJob([
                     'elementId' => (int)$product->id,
                     'siteId' => (int)$product->siteId,
@@ -401,6 +409,10 @@ class CommerceHubspotIntegration extends Plugin
                     }
 
                     if (!isset($digitalProduct->id, $digitalProduct->siteId) || !$digitalProduct->id || !$digitalProduct->siteId) {
+                        return;
+                    }
+
+                    if (!$this->isElementEnabledForProvisioning($digitalProduct)) {
                         return;
                     }
 
@@ -465,6 +477,19 @@ class CommerceHubspotIntegration extends Plugin
         }
 
         return in_array($candidate, $allowedSources, true);
+    }
+
+    private function isElementEnabledForProvisioning(object $element): bool
+    {
+        if (method_exists($element, 'getEnabledForSite')) {
+            return (bool)$element->getEnabledForSite();
+        }
+
+        if (isset($element->enabled)) {
+            return (bool)$element->enabled;
+        }
+
+        return true;
     }
 
 }

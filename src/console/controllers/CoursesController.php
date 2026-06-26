@@ -54,14 +54,14 @@ final class CoursesController extends Controller
         $productTypeHandles = array_values(array_filter(array_unique($productTypeHandles)));
         $digitalProductTypeHandles = array_values(array_filter(array_unique($digitalProductTypeHandles)));
 
-        $entryQuery = Entry::find()->site('*')->status(null)->drafts(false)->revisions(false)->limit(null);
+        $entryQuery = Entry::find()->site('*')->status('enabled')->drafts(false)->revisions(false)->limit(null);
         if ($sectionHandles !== []) {
             $entryQuery->section($sectionHandles);
         } else {
             $entryQuery->id([]);
         }
 
-        $productQuery = Product::find()->site('*')->status(null)->drafts(false)->revisions(false)->limit(null);
+        $productQuery = Product::find()->site('*')->status('enabled')->drafts(false)->revisions(false)->limit(null);
         if ($productTypeHandles !== []) {
             $productQuery->type($productTypeHandles);
         } else {
@@ -75,7 +75,7 @@ final class CoursesController extends Controller
             $digitalProductQuery = $digitalProductClass::find();
             $digitalProductQuery
                 ->site('*')
-                ->status(null)
+                ->status('enabled')
                 ->drafts(false)
                 ->revisions(false)
                 ->limit(null)

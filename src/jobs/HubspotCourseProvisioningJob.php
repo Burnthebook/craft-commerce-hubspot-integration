@@ -48,6 +48,22 @@ final class HubspotCourseProvisioningJob extends BaseJob implements RetryableJob
             return;
         }
 
+        if (!$this->isElementEnabledForProvisioning($element)) {
+            $record->status = HubspotCourseSyncRecord::STATUS_SUCCEEDED;
+            $record->hubspotObjectId = null;
+            $record->lastError = null;
+            $record->lastCorrelationId = null;
+            $record->syncedAt = Craft::$app->getFormatter()->asDatetime('now', 'php:Y-m-d H:i:s');
+            $record->save(false);
+
+            Craft::info(
+                sprintf('Skipping HubSpot course provisioning for disabled element %d (site %d).', $this->elementId, $this->siteId),
+                'craft-commerce-hubspot-integration'
+            );
+
+            return;
+        }
+
         $service = CommerceHubspotIntegration::getInstance()->getHubspotCourseProvisioningService();
         $payloadHash = $service->payloadHash($element);
 
@@ -115,5 +131,18 @@ final class HubspotCourseProvisioningJob extends BaseJob implements RetryableJob
     {
         $element = Craft::$app->getElements()->getElementById($this->elementId, null, $this->siteId);
         return $element instanceof ElementInterface ? $element : null;
+    }
+
+    private function isElementEnabledForProvisioning(ElementInterface $element): bool
+    {
+        if (method_exists($element, 'getEnabledForSite')) {
+            return (bool)$element->getEnabledForSite();
+        }
+
+        if (isset($element->enabled)) {
+            return (bool)$element->enabled;
+        }
+
+        return true;
     }
 }

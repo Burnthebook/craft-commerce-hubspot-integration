@@ -191,7 +191,7 @@ final class HubspotCourseProvisioningService
         $targets = [];
 
         foreach ($variants as $variant) {
-            if ($variant instanceof ElementInterface) {
+            if ($variant instanceof ElementInterface && $this->isElementEnabledForProvisioning($variant)) {
                 $targets[] = $variant;
             }
         }
@@ -214,5 +214,18 @@ final class HubspotCourseProvisioningService
         }
 
         return $targetTitle !== '' ? $targetTitle : $sourceTitle;
+    }
+
+    private function isElementEnabledForProvisioning(ElementInterface $element): bool
+    {
+        if (method_exists($element, 'getEnabledForSite')) {
+            return (bool)$element->getEnabledForSite();
+        }
+
+        if (isset($element->enabled)) {
+            return (bool)$element->enabled;
+        }
+
+        return true;
     }
 }
