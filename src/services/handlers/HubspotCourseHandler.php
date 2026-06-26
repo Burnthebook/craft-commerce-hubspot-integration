@@ -126,6 +126,10 @@ final class HubspotCourseHandler
                 ]
             );
 
+            if ($description !== null && $description !== '') {
+                $propertiesToUpdate['hs_course_name'] = $description;
+            }
+
             if ($propertiesToUpdate !== []) {
                 $this->client->updateObject(
                     objectType: HubspotObjectType::Course,
