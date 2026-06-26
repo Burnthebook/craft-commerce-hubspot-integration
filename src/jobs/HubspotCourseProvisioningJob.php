@@ -70,11 +70,21 @@ final class HubspotCourseProvisioningJob extends BaseJob implements RetryableJob
         $record->save(false);
 
         try {
-            $hubspotId = $service->provisionCourse($element);
+            $hubspotIds = $service->provisionCourses($element);
             $record->status = HubspotCourseSyncRecord::STATUS_SUCCEEDED;
-            $record->hubspotObjectId = $hubspotId;
+            $record->hubspotObjectId = $hubspotIds === [] ? null : (string)reset($hubspotIds);
             $record->syncedAt = Craft::$app->getFormatter()->asDatetime('now', 'php:Y-m-d H:i:s');
             $record->save(false);
+
+            Craft::info(
+                sprintf(
+                    'Provisioned %d HubSpot course record(s) for element %d (site %d).',
+                    count($hubspotIds),
+                    $this->elementId,
+                    $this->siteId
+                ),
+                'craft-commerce-hubspot-integration'
+            );
         } catch (Throwable $exception) {
             $record->status = HubspotCourseSyncRecord::STATUS_FAILED;
             $record->lastError = $exception->getMessage();

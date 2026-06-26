@@ -19,48 +19,79 @@ final class HubspotCourseProvisioningService
     }
 
     /**
-     * @return array{sku: string, name: string, courseDate: string|null, typeId: string|null}
+     * @return array<int, array{sku: string, name: string, courseDate: string|null, typeId: string|null}>
      */
-    public function extractProvisioningPayload(ElementInterface $element): array
+    public function extractProvisioningPayloads(ElementInterface $element): array
     {
-        $sku = $this->normalizeValue($this->resolveSku($element))
-            ?? $this->normalizeValue($this->readValue($element, ['sku', 'craftCourseId', 'courseId', 'hsCourseId']));
-        $name = $this->normalizeValue($this->readValue($element, ['title', 'description', 'courseName'])) ?? '';
-        $courseDate = $this->normalizeValue($this->readValue($element, ['ConferenceStartDate', 'conferenceStartDate', 'courseDate']));
-        $typeId = $this->normalizeValue($this->readValue($element, ['type_id', 'typeId']));
+        $payloads = [];
 
-        return [
-            'sku' => $sku ?? '',
-            'name' => $name,
-            'courseDate' => $courseDate,
-            'typeId' => $typeId,
-        ];
+        foreach ($this->resolveProvisioningTargets($element) as $target) {
+            $sku = $this->normalizeValue($this->resolveSku($target))
+                ?? $this->normalizeValue($this->readValue($target, ['sku', 'craftCourseId', 'courseId', 'hsCourseId']))
+                ?? $this->normalizeValue($this->readValue($element, ['sku', 'craftCourseId', 'courseId', 'hsCourseId']));
+
+            $payloads[] = [
+                'sku' => $sku ?? '',
+                'name' => $this->resolveDisplayName($element, $target),
+                'courseDate' => $this->normalizeValue($this->readValue($target, ['ConferenceStartDate', 'conferenceStartDate', 'courseDate']))
+                    ?? $this->normalizeValue($this->readValue($element, ['ConferenceStartDate', 'conferenceStartDate', 'courseDate'])),
+                'typeId' => $this->normalizeValue($this->readValue($target, ['type_id', 'typeId']))
+                    ?? $this->normalizeValue($this->readValue($element, ['type_id', 'typeId'])),
+            ];
+        }
+
+        return $payloads;
     }
 
     public function payloadHash(ElementInterface $element): string
     {
-        $payload = $this->extractProvisioningPayload($element);
-        return hash('sha256', json_encode($payload) ?: '');
+        $payloads = $this->extractProvisioningPayloads($element);
+        return hash('sha256', json_encode($payloads) ?: '');
     }
 
     /**
-     * Upsert course in HubSpot and return object ID.
+     * Upsert one or more courses in HubSpot and return object IDs keyed by SKU.
+     *
+     * @return array<string, string>
+     */
+    public function provisionCourses(ElementInterface $element): array
+    {
+        $payloads = $this->extractProvisioningPayloads($element);
+
+        if ($payloads === []) {
+            throw new \RuntimeException('Course provisioning skipped: no provisioning targets were resolved from source element.');
+        }
+
+        $hubspotIds = [];
+
+        foreach ($payloads as $payload) {
+            if ($payload['sku'] === '') {
+                throw new \RuntimeException('Course provisioning skipped: missing SKU value on source element or variant.');
+            }
+
+            $hubspotIds[$payload['sku']] = $this->courseHandler->upsertCourseBySku(
+                sku: $payload['sku'],
+                description: $payload['name'] !== '' ? $payload['name'] : null,
+                status: null,
+                conferenceStartDate: $payload['courseDate'],
+                typeId: $payload['typeId']
+            );
+        }
+
+        return $hubspotIds;
+    }
+
+    /**
+     * Backwards-compatible single-call wrapper for provisioning.
      */
     public function provisionCourse(ElementInterface $element): string
     {
-        $payload = $this->extractProvisioningPayload($element);
-
-        if ($payload['sku'] === '') {
-            throw new \RuntimeException('Course provisioning skipped: missing SKU value on source element.');
+        $hubspotIds = $this->provisionCourses($element);
+        if ($hubspotIds === []) {
+            throw new \RuntimeException('Course provisioning skipped: no HubSpot course IDs were returned.');
         }
 
-        return $this->courseHandler->upsertCourseBySku(
-            sku: $payload['sku'],
-            description: $payload['name'] !== '' ? $payload['name'] : null,
-            status: null,
-            conferenceStartDate: $payload['courseDate'],
-            typeId: $payload['typeId']
-        );
+        return (string)reset($hubspotIds);
     }
 
     private function readValue(ElementInterface $element, array $candidates): mixed
@@ -137,5 +168,51 @@ final class HubspotCourseProvisioningService
         }
 
         return null;
+    }
+
+    /**
+     * @return array<int, ElementInterface>
+     */
+    private function resolveProvisioningTargets(ElementInterface $element): array
+    {
+        if (!method_exists($element, 'getVariants')) {
+            return [$element];
+        }
+
+        $variants = $element->getVariants();
+        if (is_object($variants) && method_exists($variants, 'all')) {
+            $variants = $variants->all();
+        }
+
+        if (!is_iterable($variants)) {
+            return [$element];
+        }
+
+        $targets = [];
+
+        foreach ($variants as $variant) {
+            if ($variant instanceof ElementInterface) {
+                $targets[] = $variant;
+            }
+        }
+
+        return $targets !== [] ? $targets : [$element];
+    }
+
+    private function resolveDisplayName(ElementInterface $sourceElement, ElementInterface $targetElement): string
+    {
+        $sourceTitle = $this->normalizeValue($this->readValue($sourceElement, ['title', 'description', 'courseName'])) ?? '';
+
+        if ($sourceElement === $targetElement) {
+            return $sourceTitle;
+        }
+
+        $targetTitle = $this->normalizeValue($this->readValue($targetElement, ['title', 'description', 'courseName'])) ?? '';
+
+        if ($sourceTitle !== '' && $targetTitle !== '' && $targetTitle !== $sourceTitle) {
+            return $sourceTitle . ': ' . $targetTitle;
+        }
+
+        return $targetTitle !== '' ? $targetTitle : $sourceTitle;
     }
 }
